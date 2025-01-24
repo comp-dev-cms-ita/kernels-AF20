@@ -11,8 +11,13 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
 
-RUN conda install -c conda-forge -y python=3.11
-#RUN conda install conda-libmamba-solver
+RUN conda init bash
+RUN echo "conda activate base" >> ~/.bashrc
+
+SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
+
+RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
+RUN conda install -c conda-forge -y python=3.11 root==6.32 boost-cpp htcondor bokeh==3.1.0
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
@@ -27,15 +32,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich #apt-get i
 
 RUN python3 -m pip install \
     htcondor \
-    click==7.1.2 \
+    click \
     ipython \
-    "dask[complete]==2021.11.1" \
-    dask-jobqueue==0.7.3
+    "dask[complete]==2024.4.1" \
+    dask-jobqueue \
+    dogpile.cache
 
 WORKDIR /usr/local/share/comp-dev-cms-ita
 
 # Install dask remote jobqueue
-RUN git clone --branch AF20-updateNoConda-standalone-longTimeout https://github.com/ttedeschi/dask-remote-jobqueue
+RUN git clone --branch AF20-experimental https://github.com/ttedeschi/dask-remote-jobqueue
 # WORKDIR /usr/local/share/comp-dev-cms-ita/dask-remote-jobqueue
 # RUN python3 setup.py install
 # WORKDIR /usr/local/share/comp-dev-cms-ita
@@ -64,17 +70,53 @@ RUN apt-get update && \
     graphviz-dev libavahi-compat-libdnssd-dev \
     libldap2-dev libxml2-dev libkrb5-dev wget \
     libgsl0-dev git python3 python3-pip curl sudo \
-    libblas-dev protobuf-compiler
+    libblas-dev protobuf-compiler voms-clients
+
+RUN openssl rand -writerand /root/.rnd
+
+ENV X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
 
 RUN python3 -m pip install ipykernel ipywidgets matplotlib
 
 RUN apt-get -y install davix
 
-
-RUN conda install -c conda-forge -y root xrootd
-
 RUN echo /usr/local/lib/root >> /etc/ld.so.conf && ldconfig
 ENV PYTHONPATH /usr/local/lib/root:$PYTHONPATH
 ENV CLING_STANDARD_PCH none
 
-RUN python3 -m pip install rucio-clients
+RUN python3 -m pip install rucio-clients 
+
+#RUN python3 -m pip install correctionlib
+RUN conda install -y  correctionlib
+
+ENV correctionlib_DIR /opt/conda/lib/python3.11/site-packages/correctionlib/cmake/
+ENV CPATH /opt/conda/lib/python3.11/site-packages/correctionlib/include
+
+RUN git clone https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git
+RUN sed -i 's/find_package(Python)/find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development)/g' CMSJMECalculators/CMakeLists.txt
+RUN cmake -DPython3_EXECUTABLE=/opt/conda/bin/python3 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda CMSJMECalculators
+RUN make
+RUN make install
+
+RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
+ENV PATH=$PATH:/usr/local/go/bin
+
+RUN git clone https://github.com/dmwm/dasgoclient.git
+WORKDIR dasgoclient
+RUN go get github.com/dmwm/cmsauth
+RUN go get github.com/dmwm/das2go
+RUN go get github.com/vkuznet/x509proxy
+RUN go get github.com/buger/jsonparser
+RUN go get github.com/pkg/profile
+
+RUN make build_all
+
+RUN mv dasgoclient_amd64 /usr/local/go/bin/dasgoclient
+
+#RUN python3 -m pip install git+https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git
+
+
+
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "base"]
+

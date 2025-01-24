@@ -11,14 +11,14 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
 
-RUN conda install -c conda-forge -y python=3.11 xrootd
+RUN conda install -c conda-forge -y python=3.11 xrootd htcondor bokeh==3.1.0 setuptools==70.3.0
 #RUN conda install conda-libmamba-solver
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
 RUN chmod +x /bin/tini
 
-RUN python3 -m pip install -U pip setuptools wheel
+RUN python3 -m pip install -U pip wheel
 
 #RUN curl -fsSL https://research.cs.wisc.edu/htcondor/repo/keys/HTCondor-Release.gpg.key | apt-key add - \
 #    && echo  "deb [arch=amd64] https://research.cs.wisc.edu/htcondor/repo/ubuntu/8.9 focal main\ndeb-src https://research.cs.wisc.edu/htcondor/repo/ubuntu/8.9 focal main" > /etc/apt/sources.list.d/htcondor.list
@@ -29,7 +29,7 @@ RUN python3 -m pip install \
     htcondor \
     click \
     ipython \
-    "dask[complete]==2023.9.0" \
+    "dask[complete]==2024.4.1" \
     dask-jobqueue
 
 WORKDIR /usr/local/share/comp-dev-cms-ita
@@ -64,11 +64,15 @@ RUN apt-get update && \
     graphviz-dev libavahi-compat-libdnssd-dev \
     libldap2-dev libxml2-dev libkrb5-dev wget \
     libgsl0-dev git python3 python3-pip curl sudo \
-    libblas-dev protobuf-compiler
+    libblas-dev protobuf-compiler voms-clients
+
+RUN openssl rand -writerand /root/.rnd
+
+ENV X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
 
 RUN python3 -m pip install ipykernel ipywidgets matplotlib
 
-RUN apt-get -y install davix
+RUN apt-get -y install davix vim
 
 RUN python3 -m pip install coffea==0.7.22 \ 
                               numba>=0.57.0 \ 
@@ -89,3 +93,7 @@ RUN python3 -m pip install coffea==0.7.22 \
                               click
 
 RUN python3 -m pip install rucio-clients
+
+RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
+
+RUN sed -i 's/condor_submit/condor_submit -spool/g' /opt/conda/lib/python3.11/site-packages/dask_jobqueue/htcondor.py
