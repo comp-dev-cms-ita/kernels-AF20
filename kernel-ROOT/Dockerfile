@@ -1,4 +1,5 @@
-FROM ubuntu:22.04
+FROM rootproject/root:6.34.00-ubuntu24.10 
+#ubuntu:22.04
 
 # ROOT deps
 RUN apt-get update && \
@@ -17,7 +18,7 @@ RUN echo "conda activate base" >> ~/.bashrc
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
 RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
-RUN conda install -c conda-forge -y python=3.11 root==6.32 boost-cpp htcondor bokeh==3.1.0
+RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
@@ -87,7 +88,8 @@ ENV CLING_STANDARD_PCH none
 RUN python3 -m pip install rucio-clients 
 
 #RUN python3 -m pip install correctionlib
-RUN conda install -y  correctionlib
+#RUN conda install -y  correctionlib
+RUN conda install -y -c conda-forge correctionlib
 
 ENV correctionlib_DIR /opt/conda/lib/python3.11/site-packages/correctionlib/cmake/
 ENV CPATH /opt/conda/lib/python3.11/site-packages/correctionlib/include
@@ -119,4 +121,3 @@ RUN mv dasgoclient_amd64 /usr/local/go/bin/dasgoclient
 
 
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "base"]
-
