@@ -1,4 +1,4 @@
-FROM rootproject/root:6.34.00-ubuntu24.10 
+FROM rootproject/root:6.34.00-ubuntu24.04
 #ubuntu:22.04
 
 # ROOT deps
@@ -64,7 +64,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install \
-    dpkg-dev cmake g++ gcc binutils libx11-dev libxpm-dev \
+    dpkg-dev cmake g++ gcc-12 binutils libx11-dev libxpm-dev \
     libxft-dev libxext-dev libssl-dev gfortran libpcre3-dev \
     xlibmesa-glu-dev libglew-dev libftgl-dev \
     libmysqlclient-dev libfftw3-dev libcfitsio-dev \
@@ -91,16 +91,17 @@ RUN python3 -m pip install rucio-clients
 #RUN conda install -y  correctionlib
 RUN conda install -y -c conda-forge correctionlib
 
-#ENV correctionlib_DIR /opt/conda/lib/python3.11/site-packages/correctionlib/cmake/
-#ENV CPATH /opt/conda/lib/python3.11/site-packages/correctionlib/include
+ENV correctionlib_DIR /opt/conda/lib/python3.11/site-packages/correctionlib/cmake/
+ENV CPATH /opt/conda/lib/python3.11/site-packages/correctionlib/include
 
-#RUN git clone https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git
-#RUN sed -i 's/find_package(Python)/find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development)/g' CMSJMECalculators/CMakeLists.txt
-#RUN cmake -DPython3_EXECUTABLE=/opt/conda/bin/python3 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda CMSJMECalculators
-#RUN make
-#RUN make install
+RUN git clone https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git -b 0.2.0
+RUN sed -i 's/std::uint32_t/uint32_t/g' CMSJMECalculators/interface/JMESystematicsCalculators.h
+RUN sed -i 's/find_package(Python)/find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development)/g' CMSJMECalculators/CMakeLists.txt
+RUN cmake -DCMAKE_CXX_FLAGS="-std=c++11 -include cstdint"  -DPython3_EXECUTABLE=/opt/conda/bin/python3 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/conda CMSJMECalculators
+RUN make
+RUN make install
 
-RUN python3 -m pip install git+https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git@0.2.0
+#RUN python3 -m pip install git+https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git@0.2.0
 
 RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
 RUN rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
