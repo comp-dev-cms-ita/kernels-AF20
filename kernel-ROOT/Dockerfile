@@ -18,7 +18,7 @@ RUN echo "conda activate base" >> ~/.bashrc
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
 RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
-RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0
+RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0 xrootd
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
@@ -121,6 +121,6 @@ RUN mv dasgoclient_amd64 /usr/local/go/bin/dasgoclient
 
 #RUN python3 -m pip install git+https://gitlab.cern.ch/cp3-cms/CMSJMECalculators.git
 
-
+ENV LD_LIBRARY_PATH=/opt/conda/lib/
 
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "base"]
