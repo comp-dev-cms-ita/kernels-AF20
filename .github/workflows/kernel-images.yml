@@ -158,9 +158,9 @@ jobs:
         - name: Build container kernel-Bamboo
           uses: docker/build-push-action@v2
           with:
-            context: ./kernel-Bamboo/
+            context: ./kernel-bamboo/
             outputs: "type=registry,push=true"
             tags: |
               ghcr.io/${{ steps.get_repo_owner.outputs.repo_owner }}/kernel-bamboo:${{ env.RELEASE_VERSION }}
-            file: ./kernel-Bamboo/Dockerfile
+            file: ./kernel-bamboo/Dockerfile
             platforms: linux/amd64
