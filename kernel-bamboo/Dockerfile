@@ -39,3 +39,6 @@ RUN pip install git+https://gitlab.cern.ch/ttedesch/pyplotit.git@fix
 WORKDIR /code
 
 RUN git clone https://gitlab.cern.ch/ttedesch/bamboo.git -b add_INFN --single-branch
+
+ENV PYTHONPATH=$PYTHONPATH:/opt/conda/lib/python3.11/site-packages/
+ENV LD_LIBRARY_PATH=/opt/conda/lib/python3.11/site-packages/correctionlib/lib/:$LD_LIBRARY_PATH
