@@ -1,4 +1,4 @@
-FROM ghcr.io/comp-dev-cms-ita/kernel-root
+FROM ghcr.io/comp-dev-cms-ita/kernel-root:v0.0.11-rc3
 
 WORKDIR /code
 
@@ -13,7 +13,7 @@ RUN apt-get update && \
     apt-get install -y xrootd-client && \
     DEBIAN_FRONTEND=noninteractive apt install krb5-user -y libkrb5-dev libauthen-krb5-perl   
 
-RUN git clone https://gitlab.cern.ch/cms-analysis/general/mkShapesRDF.git /code/
+RUN git clone https://github.com/ldellape/mkShapesRDF.git -b VBS_Run3_Polarization_semilep --single-branch /code/
 
 RUN sed -i '152a\
     set(VDT_LIBRARY "/opt/conda/lib/libvdt.so" CACHE INTERNAL "set VDT_LIBRARY env var")\n\
