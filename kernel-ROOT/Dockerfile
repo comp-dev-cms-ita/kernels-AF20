@@ -1,5 +1,5 @@
-FROM rootproject/root:6.34.00-ubuntu24.04
-#ubuntu:22.04
+#FROM rootproject/root:6.34.00-ubuntu24.04
+FROM ubuntu:24.04
 
 # ROOT deps
 RUN apt-get update && \
@@ -19,6 +19,38 @@ SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
 RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
 RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0 xrootd
+
+RUN apt-get -y install davix
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install \
+    dpkg-dev cmake g++ gcc binutils libx11-dev libxpm-dev \
+    libxft-dev libxext-dev libssl-dev gfortran libpcre3-dev \
+    xlibmesa-glu-dev libglew-dev libftgl-dev \
+    libmysqlclient-dev libfftw3-dev libcfitsio-dev \
+    graphviz-dev libavahi-compat-libdnssd-dev \
+    libldap2-dev libxml2-dev libkrb5-dev wget \
+    libgsl0-dev git curl sudo \
+    libblas-dev protobuf-compiler
+
+
+RUN git clone https://github.com/root-project/root.git root_src
+#RUN git clone https://github.com/vepadulano/root.git -b infn-branch root_src
+RUN mkdir root_build
+RUN cmake -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
+          -Dbuiltin_xrootd=ON -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
+          -Dtmva=ON -Dmlp=ON -Dtmva-pymva=ON -Dtmva-cpu=ON -Dtmva-sofie=ON \
+          -Dasimage=ON -Druntime_cxxmodules=ON \
+          -B root_build -S root_src
+RUN cmake --build root_build -- install -j$(nproc)
+
+# Remove artifacts
+RUN rm -rf root_build root_src
+
+# Change environment so that libraries are properly found
+RUN echo /usr/local/lib/root >> /etc/ld.so.conf && ldconfig
+ENV PYTHONPATH /usr/local/lib/root:$PYTHONPATH
+ENV CLING_STANDARD_PCH none
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
@@ -79,7 +111,6 @@ ENV X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
 
 RUN python3 -m pip install ipykernel ipywidgets matplotlib
 
-RUN apt-get -y install davix
 
 RUN echo /usr/local/lib/root >> /etc/ld.so.conf && ldconfig
 ENV PYTHONPATH /usr/local/lib/root:$PYTHONPATH
