@@ -34,8 +34,8 @@ RUN apt-get update && \
     libblas-dev protobuf-compiler
 
 
-RUN git clone https://github.com/root-project/root.git root_src
-#RUN git clone https://github.com/vepadulano/root.git -b infn-branch root_src
+#RUN git clone https://github.com/root-project/root.git root_src
+RUN git clone https://github.com/vepadulano/root.git -b infn-branch root_src
 RUN mkdir root_build
 RUN cmake -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
           -Dbuiltin_xrootd=ON -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
