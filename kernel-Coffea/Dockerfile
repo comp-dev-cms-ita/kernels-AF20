@@ -11,6 +11,9 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
 
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+ && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
 RUN conda install -c conda-forge -y python=3.11 xrootd htcondor setuptools==70.3.0
 #RUN conda install conda-libmamba-solver
 
@@ -93,6 +96,9 @@ RUN python3 -m pip install coffea==0.7.22 \
                               click
 
 RUN python3 -m pip install rucio-clients
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+ && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 #RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
 RUN conda install -c conda-forge -y conda-libmamba-solver \
