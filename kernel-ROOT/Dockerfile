@@ -20,7 +20,7 @@ RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkg
  && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
-RUN conda install -c conda-forge -y python=3.11 root==6.34 boost-cpp htcondor bokeh==3.1.0
+RUN conda install -c conda-forge -y python=3.11 "root=6.34.*" boost-cpp htcondor bokeh==3.1.0
 
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
