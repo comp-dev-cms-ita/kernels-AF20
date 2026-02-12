@@ -19,7 +19,7 @@ RUN echo "conda activate base" >> ~/.bashrc
 
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
-RUN conda install -c conda-forge -y python=3.11 boost-cpp bokeh==3.1.0 xrootd
+RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0 xrootd
 
 RUN apt-get -y install davix
 
@@ -44,7 +44,7 @@ RUN mkdir root_build
 RUN cmake -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
           -Dbuiltin_xrootd=ON -Dxrootd=ON -Dssl=ON -Dbuiltin_davix=ON -Ddavix=ON  \
           -Dtmva=ON -Dmlp=ON -Dtmva-pymva=ON -Dtmva-cpu=ON -Dtmva-sofie=ON \
-          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON \
+          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON -Droofit=ON \
           -DCMAKE_CXX_FLAGS="-Wno-error=sign-compare" \
           -B root_build -S root_src
 RUN cmake --build root_build -- install -j$(nproc)
