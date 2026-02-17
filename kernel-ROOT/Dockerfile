@@ -1,16 +1,14 @@
 #FROM rootproject/root:6.34.00-ubuntu24.04
 FROM ubuntu:24.04
 
-# Utils and ROOT dep (git)
+# ROOT deps
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install \
-    git curl sudo wget vim 
+    git curl sudo wget  #ipython3.10 python3-pip 
 
-ENV CONDA_DIR=/opt/conda
-
-RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh"
-RUN bash Miniforge3-Linux-x86_64.sh -b -p /opt/conda
-
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
 # Put conda in path so we can use conda activate
 ENV PATH=$CONDA_DIR/bin:$PATH
 
@@ -19,33 +17,33 @@ RUN echo "conda activate base" >> ~/.bashrc
 
 SHELL ["conda", "run", "-n", "base", "/bin/bash", "-c"]
 
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+ && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+RUN conda install --solver=classic conda-forge::conda-libmamba-solver conda-forge::libmamba conda-forge::libmambapy conda-forge::libarchive
 RUN conda install -c conda-forge -y python=3.11 boost-cpp htcondor bokeh==3.1.0 xrootd
 
 RUN apt-get -y install davix
 
-# ROOT required deps in Ubuntu/Debian
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install binutils cmake dpkg-dev g++ gcc libssl-dev libx11-dev libxext-dev libxft-dev libxpm-dev libtbb-dev libvdt-dev libgif-dev
-
-# ROOT optional deps in Ubuntu/Debian
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install \
-    libglew-dev libftgl-dev xlibmesa-glu-dev \
+    dpkg-dev cmake g++ gcc binutils libx11-dev libxpm-dev \
+    libxft-dev libxext-dev libssl-dev gfortran libpcre3-dev \
+    xlibmesa-glu-dev libglew-dev libftgl-dev \
     libmysqlclient-dev libfftw3-dev libcfitsio-dev \
-    graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev \
-    libxml2-dev libkrb5-dev libgsl0-dev \
-    libblas-dev protobuf-compiler gfortran \
-    libpcre3-dev
+    graphviz-dev libavahi-compat-libdnssd-dev \
+    libldap2-dev libxml2-dev libkrb5-dev wget \
+    libgsl0-dev git curl sudo \
+    libblas-dev protobuf-compiler
 
-### ROOT installation from source ###
+
 #RUN git clone https://github.com/root-project/root.git root_src
 RUN git clone https://github.com/vepadulano/root.git -b infn-branch root_src
 RUN mkdir root_build
 RUN cmake -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
-          -Dbuiltin_xrootd=ON -Dxrootd=ON -Dssl=ON -Dbuiltin_davix=ON -Ddavix=ON  \
+          -Dbuiltin_xrootd=ON -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
           -Dtmva=ON -Dmlp=ON -Dtmva-pymva=ON -Dtmva-cpu=ON -Dtmva-sofie=ON \
-          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON -Droofit=ON \
-          -DCMAKE_CXX_FLAGS="-Wno-error=sign-compare" \
+          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON \
           -B root_build -S root_src
 RUN cmake --build root_build -- install -j$(nproc)
 
@@ -57,26 +55,23 @@ RUN echo /usr/local/lib/root >> /etc/ld.so.conf && ldconfig
 ENV PYTHONPATH /usr/local/lib/root:$PYTHONPATH
 ENV CLING_STANDARD_PCH none
 
-### To be removed ###
-#ENV TINI_VERSION v0.19.0
-#ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
-#RUN chmod +x /bin/tini
-#RUN python3 -m pip install -U pip setuptools wheel
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
+RUN chmod +x /bin/tini
+
+RUN python3 -m pip install -U pip setuptools wheel
 
 #RUN curl -fsSL https://research.cs.wisc.edu/htcondor/repo/keys/HTCondor-Release.gpg.key | apt-key add - \
 #    && echo  "deb [arch=amd64] https://research.cs.wisc.edu/htcondor/repo/ubuntu/8.9 focal main\ndeb-src https://research.cs.wisc.edu/htcondor/repo/ubuntu/8.9 focal main" > /etc/apt/sources.list.d/htcondor.list
 
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich #apt-get install -y htcondor
+
 RUN python3 -m pip install \
     htcondor \
-    uproot \
     click \
     ipython \
     "dask[complete]==2024.4.1" \
-    dogpile.cache \
-    ipykernel \
-    ipywidgets \
-    matplotlib \
-    rucio-clients
+    dogpile.cache
 
 WORKDIR /usr/local/share/comp-dev-cms-ita
 
@@ -107,9 +102,32 @@ COPY ./ca.crt /ca.crt
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y install oidc-agent-cli
 
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Europe/Zurich apt-get -y -q install \
+    dpkg-dev cmake g++ gcc-12 binutils libx11-dev libxpm-dev \
+    libxft-dev libxext-dev libssl-dev gfortran libpcre3-dev \
+    xlibmesa-glu-dev libglew-dev libftgl-dev \
+    libmysqlclient-dev libfftw3-dev libcfitsio-dev \
+    graphviz-dev libavahi-compat-libdnssd-dev \
+    libldap2-dev libxml2-dev libkrb5-dev wget \
+    libgsl0-dev git python3 python3-pip curl sudo \
+    libblas-dev protobuf-compiler voms-clients
+
 RUN openssl rand -writerand /root/.rnd
 
 ENV X509_CERT_DIR=/cvmfs/cms.cern.ch/grid/etc/grid-security/certificates
+
+RUN python3 -m pip install ipykernel ipywidgets matplotlib
+
+
+RUN echo /usr/local/lib/root >> /etc/ld.so.conf && ldconfig
+ENV PYTHONPATH /usr/local/lib/root:$PYTHONPATH
+ENV CLING_STANDARD_PCH none
+
+RUN python3 -m pip install rucio-clients 
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
+ && conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 #RUN python3 -m pip install correctionlib
 #RUN conda install -y  correctionlib
