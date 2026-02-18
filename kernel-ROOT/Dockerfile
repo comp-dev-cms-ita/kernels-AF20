@@ -43,7 +43,8 @@ RUN mkdir root_build
 RUN cmake -Dssl=ON  -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
           -Dbuiltin_xrootd=ON -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
           -Dtmva=ON -Dmlp=ON -Dtmva-pymva=ON -Dtmva-cpu=ON -Dtmva-sofie=ON \
-          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON \
+          -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON Droofit=ON \
+          -DCMAKE_CXX_FLAGS="-Wno-error=sign-compare" \
           -B root_build -S root_src
 RUN cmake --build root_build -- install -j$(nproc)
 
