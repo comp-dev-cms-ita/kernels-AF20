@@ -41,7 +41,7 @@ RUN apt-get update && \
 RUN git clone https://github.com/vepadulano/root.git -b infn-branch root_src
 RUN mkdir root_build
 RUN cmake -Dssl=ON  -Dgminimal=ON -Dpyroot=ON -Ddataframe=ON -Dgnuinstall=ON -Ddev=ON \
-          -Dbuiltin_xrootd=ON -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
+          -Dbuiltin_xrootd=OFF -Dxrootd=ON -Dbuiltin_davix=ON -Ddavix=ON  \
           -Dtmva=ON -Dmlp=ON -Dtmva-pymva=ON -Dtmva-cpu=ON -Dtmva-sofie=ON \
           -Dasimage=ON -Druntime_cxxmodules=ON -Droot7=ON -Dimt=ON Droofit=ON \
           -DCMAKE_CXX_FLAGS="-Wno-error=sign-compare" \
